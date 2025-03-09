@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Downloader</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <style>
+    body {
+      background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
+      color: #f1f5f9;
+      font-family: 'Segoe UI', 'Arial', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow-y: auto;
+    }
+    .container {
+      max-width: 900px;
+      margin: 2rem;
+      padding: 2.5rem;
+      background: rgba(40, 40, 40, 0.95);
+      border-radius: 20px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6), inset 0 1px 2px rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(5px);
+    }
+    h1 {
+      font-size: 3rem;
+      font-weight: 800;
+      text-align: center;
+      color: #14b8a6;
+      text-shadow: 0 3px 6px rgba(20, 184, 166, 0.3);
+      margin-bottom: 2.5rem;
+      letter-spacing: 1px;
+    }
+    .btn {
+      background: linear-gradient(to right, #14b8a6, #0d9488);
+      padding: 0.85rem 2rem;
+      border-radius: 10px;
+      color: white;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      transition: all 0.3s ease;
+    }
+    .btn:hover {
+      background: linear-gradient(to right, #0d9488, #0f766e);
+      transform: translateY(-3px);
+      box-shadow: 0 6px 15px rgba(13, 148, 136, 0.4);
+    }
+    .mp3-btn {
+      background: linear-gradient(to right, #14b8a6, #0d9488);
+      padding: 0.75rem 1.5rem;
+      border-radius: 10px;
+      color: white;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      transition: all 0.3s ease;
+    }
+    .mp3-btn.active {
+      background: linear-gradient(to right, #0d9488, #14b8a6);
+      box-shadow: 0 0 10px rgba(20, 184, 166, 0.5);
+    }
+    .mp3-btn:hover {
+      background: linear-gradient(to right, #0d9488, #0f766e);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(13, 148, 136, 0.4);
+    }
+    .form-group {
+      margin-bottom: 1.75rem;
+    }
+    label {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #f1f5f9;
+      margin-bottom: 0.6rem;
+      display: block;
+    }
+    select, input[type="text"] {
+      width: 100%;
+      padding: 0.9rem;
+      background: #2d3748;
+      border: 1px solid #4b5563;
+      border-radius: 10px;
+      color: #f1f5f9;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+    }
+    select:focus, input[type="text"]:focus {
+      background: #374151;
+      border-color: #14b8a6;
+      box-shadow: 0 0 8px rgba(20, 184, 166, 0.3);
+      outline: none;
+    }
+    .input-group {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+    .folder-btn {
+      background: #14b8a6;
+      padding: 0.9rem;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .folder-btn:hover {
+      background: #0d9488;
+      transform: scale(1.05);
+    }
+    .progress-bar {
+      height: 1.75rem;
+      background: #2d3748;
+      border-radius: 15px;
+      overflow: hidden;
+      margin-top: 1.5rem;
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+      position: relative;
+    }
+    .progress {
+      height: 100%;
+      background: linear-gradient(to right, #f97316, #ea580c);
+      transition: width 0.2s ease-out;
+      box-shadow: 0 0 10px rgba(249, 115, 22, 0.5);
+      position: relative;
+    }
+    .progress::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(
+        90deg,
+        rgba(255, 255, 255, 0) 0%,
+        rgba(255, 255, 255, 0.3) 50%,
+        rgba(255, 255, 255, 0) 100%
+      );
+      animation: shimmer 2s infinite;
+    }
+    @keyframes shimmer {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+    #status {
+      color: #f97316;
+      font-weight: 600;
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+    #previewSection {
+      background: rgba(45, 45, 45, 0.9);
+      padding: 1.5rem;
+      border-radius: 12px;
+      margin-top: 2rem;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    .preview-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    #trackCount {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #14b8a6;
+    }
+    #trackList li {
+      display: flex;
+      align-items: center;
+      background: #374151;
+      padding: 1rem;
+      border-radius: 8px;
+      margin-bottom: 0.75rem;
+      transition: transform 0.2s ease;
+    }
+    #trackList li:hover {
+      transform: translateX(5px);
+      background: #4b5563;
+    }
+    #trackList img {
+      width: 48px;
+      height: 48px;
+      object-fit: cover;
+      border-radius: 6px;
+      margin-right: 1.25rem;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    }
+    #trackList .no-thumbnail {
+      background: #4b5563;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #a0aec0;
+      width: 48px;
+      height: 48px;
+      border-radius: 6px;
+      margin-right: 1.25rem;
+    }
+    #trackList .downloaded {
+      color: #10b981;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    .container, #progressSection, #previewSection {
+      animation: fadeIn 0.5s ease-in;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Made by Arta</h1>
+
+    <form id="downloadForm" class="space-y-6">
+      <div class="form-group">
+        <label for="service">Where’s it from?</label>
+        <select id="service" name="service">
+          <option value="youtube">YouTube</option>
+          <option value="spotify">Spotify</option>
+          <option value="soundcloud">SoundCloud</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="url">Drop the link here</label>
+        <input type="text" id="url" name="url" placeholder="Paste your URL" required>
+      </div>
+
+      <div id="youtubeOptions" class="space-y-4">
+        <div class="form-group">
+          <label for="quality">Pick your quality</label>
+          <select id="quality" name="quality">
+            <option value="144">144p (Low)</option>
+            <option value="360">360p</option>
+            <option value="720">720p</option>
+            <option value="1080" selected>1080p (HD)</option>
+            <option value="1440">2K (1440p)</option>
+            <option value="2160">4K (2160p)</option>
+          </select>
+        </div>
+        <button type="button" id="mp3ToggleBtn" class="mp3-btn" data-audio="false">Grab as MP4</button>
+      </div>
+
+      <div class="form-group">
+        <label for="output_path">Where should it go?</label>
+        <div class="input-group">
+          <input type="text" id="output_path" name="output_path" placeholder="Default: current folder">
+          <span id="folderPickerBtn" class="folder-btn" title="Choose folder">📂</span>
+        </div>
+      </div>
+
+      <button type="submit" class="btn w-full">Let’s Download!</button>
+    </form>
+
+    <div id="progressSection" class="mt-6 hidden">
+      <p id="status">Kicking things off...</p>
+      <div class="progress-bar">
+        <div id="progress" class="progress" style="width: 0%"></div>
+      </div>
+      <button id="stopBtn" class="btn w-full mt-4">Hold Up</button>
+    </div>
+
+    <div id="previewSection" class="mt-6 hidden">
+      <div class="preview-header">
+        <h2 class="text-2xl font-semibold text-gray-200">Here’s What’s Coming</h2>
+        <span id="trackCount"></span>
+      </div>
+      <ul id="trackList" class="space-y-2"></ul>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('downloadForm');
+    const service = document.getElementById('service');
+    const youtubeOpts = document.getElementById('youtubeOptions');
+    const urlInput = document.getElementById('url');
+    const progressArea = document.getElementById('progressSection');
+    const statusText = document.getElementById('status');
+    const progressBar = document.getElementById('progress');
+    const stopBtn = document.getElementById('stopBtn');
+    const previewArea = document.getElementById('previewSection');
+    const trackList = document.getElementById('trackList');
+    const trackCount = document.getElementById('trackCount');
+    const folderBtn = document.getElementById('folderPickerBtn');
+    const outputField = document.getElementById('output_path');
+    const mp3ToggleBtn = document.getElementById('mp3ToggleBtn');
+    let checkingProgress = null;
+    let totalTracks = 0;
+
+    service.addEventListener('change', () => {
+      youtubeOpts.classList.toggle('hidden', service.value !== 'youtube');
+      urlInput.value = '';
+      previewTracks();
+    });
+
+    folderBtn.addEventListener('click', async () => {
+      if (window.showDirectoryPicker) {
+        try {
+          const folder = await window.showDirectoryPicker();
+          outputField.value = folder.name;
+          window.selectedFolder = folder;
+        } catch (err) {
+          console.log("Folder pick canceled:", err);
+        }
+      } else {
+        alert("Your browser doesn’t support folder picking. Type it in!");
+      }
+    });
+
+    mp3ToggleBtn.addEventListener('click', () => {
+      const isAudio = mp3ToggleBtn.getAttribute('data-audio') === 'true';
+      mp3ToggleBtn.setAttribute('data-audio', !isAudio);
+      mp3ToggleBtn.classList.toggle('active', !isAudio);
+      mp3ToggleBtn.textContent = !isAudio ? 'Grab as MP4' : 'Grab as MP3';
+    });
+
+    urlInput.addEventListener('input', debounce(previewTracks, 500));
+    service.addEventListener('change', previewTracks);
+
+    function debounce(func, wait) {
+      let timeout;
+      return function (...args) {
+        clearTimeout(timeout);
+        timeout = setTimeout(() => func.apply(this, args), wait);
+      };
+    }
+
+    let currentStartIndex = 0;
+    let isLoading = false;
+    let hasMoreTracks = true;
+
+    async function previewTracks(loadMore = false) {
+      const serviceType = service.value;
+      const url = urlInput.value.trim();
+      
+      if (!url) {
+        trackList.innerHTML = '';
+        previewArea.classList.add('hidden');
+        return;
+      }
+
+      if (!loadMore) {
+        // Reset state for new preview
+        currentStartIndex = 0;
+        hasMoreTracks = true;
+        trackList.innerHTML = '';
+      }
+
+      if (!hasMoreTracks || isLoading) return;
+
+      isLoading = true;
+      previewArea.classList.remove('hidden');
+      
+      try {
+        const formData = new FormData();
+        formData.append('service', serviceType);
+        formData.append('url', url);
+        formData.append('start_index', currentStartIndex);
+        formData.append('batch_size', 10);
+
+        const response = await fetch('/preview', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!response.ok) {
+          throw new Error(`Preview failed with status: ${response.status}`);
+        }
+
+        const result = await response.json();
+
+        if (result.status === 'error') {
+          trackList.innerHTML = `<li class="error">${result.message}</li>`;
+          return;
+        }
+
+        if (result.tracks && result.tracks.length > 0) {
+          if (!loadMore) {
+            trackCount.textContent = `${result.total_tracks} tracks`;
+          }
+
+          const trackElements = result.tracks.map(track => `
+            <li>
+              ${track.cover_url 
+                ? `<img src="${track.cover_url}" alt="Cover">` 
+                : `<div class="no-thumbnail"><i class="fas fa-music"></i></div>`
+              }
+              <div class="track-info">
+                <span class="track-name">${track.name}</span>
+                <span class="track-artist">${track.artist}</span>
+                ${track.album ? `<span class="track-album">${track.album}</span>` : ''}
+              </div>
+            </li>
+          `).join('');
+
+          trackList.insertAdjacentHTML('beforeend', trackElements);
+
+          currentStartIndex += result.tracks.length;
+          hasMoreTracks = result.has_more;
+
+          // Add infinite scroll
+          if (hasMoreTracks) {
+            const observer = new IntersectionObserver((entries) => {
+              if (entries[0].isIntersecting) {
+                previewTracks(true);
+              }
+            });
+            observer.observe(trackList.lastElementChild);
+          }
+        }
+      } catch (error) {
+        console.error('Preview failed:', error);
+        trackList.innerHTML = `<li class="error">Failed to load preview: ${error.message}</li>`;
+      } finally {
+        isLoading = false;
+      }
+    }
+
+    // Add some CSS for loading state
+    const style = document.createElement('style');
+    style.textContent = `
+      .track-item {
+        display: flex;
+        align-items: center;
+        margin: 10px 0;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+      }
+      .track-cover {
+        width: 50px;
+        height: 50px;
+        margin-right: 10px;
+        object-fit: cover;
+      }
+      .track-info {
+        display: flex;
+        flex-direction: column;
+      }
+      .track-name {
+        font-weight: bold;
+      }
+      .track-artist {
+        color: #666;
+      }
+      .track-album {
+        color: #999;
+        font-size: 0.9em;
+      }
+    `;
+    document.head.appendChild(style);
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      if (checkingProgress) clearInterval(checkingProgress);
+
+      const data = new FormData(form);
+      const savePath = outputField.value.trim();
+      if (savePath) data.set('output_path', savePath);
+      data.set('is_audio', mp3ToggleBtn.getAttribute('data-audio'));
+      const serviceType = service.value;
+
+      progressArea.classList.remove('hidden');
+      statusText.textContent = 'Starting up...';
+      progressBar.style.width = '0%';
+
+      const response = await fetch('/download', { method: 'POST', body: data });
+      const result = await response.json();
+
+      if (result.status === 'started') {
+        statusText.textContent = 'Download in progress...';
+        const pollInterval = serviceType === 'youtube' && totalTracks === 1 ? 500 : 1000;
+
+        checkingProgress = setInterval(async () => {
+          try {
+            const statusCheck = await fetch('/status');
+            if (!statusCheck.ok) {
+              throw new Error(`Status check failed with status: ${statusCheck.status}`);
+            }
+            const update = await statusCheck.json();
+
+            console.log('Status update:', update);
+
+            const isPlaylist = serviceType !== 'youtube' || totalTracks > 1;
+            let progressPercentage;
+
+            if (isPlaylist) {
+              const match = update.message.match(/Downloaded (\d+)\/(\d+)/);
+              if (match) {
+                const completed = parseInt(match[1], 10);
+                const total = parseInt(match[2], 10);
+                progressPercentage = total > 0 ? (completed / total) * 100 : 0;
+              } else {
+                progressPercentage = update.progress || 0;
+              }
+
+              const trackItems = trackList.getElementsByTagName('li');
+              for (let item of trackItems) {
+                const trackId = item.getAttribute('data-track-id');
+                const trackSpan = item.querySelector('span');
+                if (update.completed_tracks.includes(trackId) && !trackSpan.classList.contains('downloaded')) {
+                  trackSpan.classList.add('downloaded');
+                }
+              }
+            } else {
+              progressPercentage = update.progress || 0;
+              if (update.completed_tracks.length > 0) {
+                const trackItems = trackList.getElementsByTagName('li');
+                for (let item of trackItems) {
+                  const trackId = item.getAttribute('data-track-id');
+                  const trackSpan = item.querySelector('span');
+                  if (update.completed_tracks.includes(trackId) && !trackSpan.classList.contains('downloaded')) {
+                    trackSpan.classList.add('downloaded');
+                  }
+                }
+              }
+            }
+
+            statusText.textContent = update.speed && update.speed !== 'N/A' ? 
+              `Downloading at ${update.speed}` : 
+              (update.message || 'Downloading...');
+
+            if (update.status === 'running') {
+              progressBar.style.width = `${progressPercentage}%`;
+            } else if (update.status === 'idle') {
+              clearInterval(checkingProgress);
+              checkingProgress = null;
+              statusText.textContent = 'All done!';
+              progressBar.style.width = '100%';
+              const trackItems = trackList.getElementsByTagName('li');
+              for (let item of trackItems) {
+                const trackSpan = item.querySelector('span');
+                if (!trackSpan.classList.contains('downloaded')) {
+                  trackSpan.classList.add('downloaded');
+                }
+              }
+            } else if (update.status === 'error' || update.status === 'stopped') {
+              clearInterval(checkingProgress);
+              checkingProgress = null;
+              statusText.textContent = update.message;
+              progressArea.classList.add('hidden');
+              alert(update.message);
+            }
+          } catch (err) {
+            console.error('Error polling status:', err);
+            statusText.textContent = `Error updating progress: ${err.message}`;
+            clearInterval(checkingProgress);
+            checkingProgress = null;
+            progressArea.classList.add('hidden');
+            alert(`Progress update failed: ${err.message}`);
+          }
+        }, pollInterval);
+      } else {
+        statusText.textContent = result.message;
+        progressArea.classList.add('hidden');
+        alert(result.message);
+      }
+    });
+
+    stopBtn.addEventListener('click', async () => {
+      if (checkingProgress) clearInterval(checkingProgress);
+      const stopResponse = await fetch('/stop', { method: 'POST' });
+      const stopResult = await stopResponse.json();
+      statusText.textContent = stopResult.message;
+      progressBar.style.width = `${stopResult.progress}%`;
+      checkingProgress = null;
+    });
+  </script>
+</body>
+</html>
